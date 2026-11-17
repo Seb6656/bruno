@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { ThemeProvider } from 'providers/Theme';
 import { savePreferences } from 'providers/ReduxStore/slices/app';
+import { mountWorkspaceCollections } from 'providers/ReduxStore/slices/collections/actions';
 import { closeDisabledMockServerTabs, saveMockResponseEditor } from 'providers/ReduxStore/slices/mock-server/actions';
 import { buildMockResponseEditorItem, mockResponseFromEditorItem } from 'utils/mock-server/mock-responses/editor';
 import Beta from './index';
@@ -23,6 +24,10 @@ jest.mock('providers/ReduxStore/slices/app', () => ({
   updateActivePreferencesTab: jest.fn((payload) => ({ type: 'test/updateActivePreferencesTab', payload }))
 }));
 
+jest.mock('providers/ReduxStore/slices/collections/actions', () => ({
+  mountWorkspaceCollections: jest.fn(() => ({ type: 'test/mountWorkspaceCollections' }))
+}));
+
 jest.mock('providers/ReduxStore/slices/mock-server/actions', () => ({
   closeDisabledMockServerTabs: jest.fn(() => ({ type: 'test/closeDisabledMockServerTabs' })),
   saveMockResponseEditor: jest.fn((responseUid) => ({ type: 'test/saveMockResponseEditor', responseUid }))
@@ -39,9 +44,9 @@ const UNSAVED_EDITORS = {
   'response-2': buildEditor({ uid: 'response-2', name: 'List users', dirty: false })
 };
 
-const renderBeta = ({ mockServerEnabled, editors = {} }) => {
+const renderBeta = ({ mockServerEnabled, loadAllEnabled = false, editors = {} }) => {
   useSelector.mockImplementation((selector) => selector({
-    app: { preferences: { beta: { 'mock-server': mockServerEnabled } } },
+    app: { preferences: { beta: { 'mock-server': mockServerEnabled, 'load-all-collections': loadAllEnabled } } },
     collections: { mockResponseEditors: editors }
   }));
   render(
@@ -184,5 +189,40 @@ describe('Beta preferences: Mock Server toggle', () => {
     expect(closeDisabledMockServerTabs).not.toHaveBeenCalled();
     expect(savePreferences).not.toHaveBeenCalled();
     expect(mockServerToggle()).toBeChecked();
+  });
+});
+
+describe('Beta preferences: Load all collections toggle', () => {
+  let mockDispatch;
+
+  const loadAllToggle = () => screen.getByTestId('load-all-collections-beta-toggle').querySelector('input[type="checkbox"]');
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDispatch = jest.fn((action) => {
+      if (action.type === 'test/savePreferences') return Promise.resolve();
+      if (action.type === 'test/mountWorkspaceCollections') return Promise.resolve();
+    });
+    useDispatch.mockReturnValue(mockDispatch);
+  });
+
+  it('loads the workspace collections once turning it on is saved', async () => {
+    renderBeta({ mockServerEnabled: true, loadAllEnabled: false });
+
+    fireEvent.click(loadAllToggle());
+
+    await waitFor(() => expect(mountWorkspaceCollections).toHaveBeenCalledTimes(1));
+    expect(savePreferences.mock.calls[0][0].beta['load-all-collections']).toBe(true);
+  });
+
+  it('does not unload or reload anything when it is turned off', async () => {
+    renderBeta({ mockServerEnabled: true, loadAllEnabled: true });
+
+    fireEvent.click(loadAllToggle());
+
+    await waitFor(() => expect(savePreferences).toHaveBeenCalled());
+    await act(() => Promise.resolve());
+    expect(savePreferences.mock.calls[0][0].beta['load-all-collections']).toBe(false);
+    expect(mountWorkspaceCollections).not.toHaveBeenCalled();
   });
 });

@@ -114,6 +114,7 @@ import { applyScriptEnvVars, getScriptModifiedKeys, writesCollidingSecrets, DUPL
 import { getInvalidVariableNames, invalidVariableNamesError } from 'utils/common/variables';
 import { safeParseJSON, safeStringifyJSON } from 'utils/common/index';
 import { resolveInheritedAuth } from 'utils/auth';
+import { BETA_FEATURES } from 'utils/beta-features';
 import { addTab } from 'providers/ReduxStore/slices/tabs';
 import { updateSettingsSelectedTab } from './index';
 import { migrationStarted, migrationCancelRequested, migrationEnded } from 'providers/ReduxStore/slices/collection-migration';
@@ -3566,6 +3567,93 @@ export const mountCollection
           });
       });
     };
+
+const LOAD_ALL_COLLECTIONS_CONCURRENCY = 2;
+
+// A single runner keeps the concurrency cap global: dispatches that arrive while a run is in
+// flight (a late-opened collection, a workspace switch, the preference being toggled) only ask
+// it to run again once it finishes, instead of starting a second pool.
+let loadAllRun = null;
+let loadAllRerunRequested = false;
+
+const mountUnmountedWorkspaceCollections = async (dispatch, getState, workspaceUid) => {
+  const workspace = getState().workspaces.workspaces.find((w) => w.uid === workspaceUid);
+  if (!workspace) {
+    return;
+  }
+
+  const workspaceCollectionPaths = new Set(
+    (workspace.collections || []).map((c) => c.path && normalizePath(c.path)).filter(Boolean)
+  );
+  const queue = getState().collections.collections
+    .filter((c) => c.pathname
+      && c.uid !== workspace.scratchCollectionUid
+      && workspaceCollectionPaths.has(normalizePath(c.pathname)))
+    .map((c) => c.uid);
+
+  const worker = async () => {
+    while (queue.length > 0) {
+      const state = getState();
+      const isEnabled = state.app.preferences?.beta?.[BETA_FEATURES.LOAD_ALL_COLLECTIONS];
+      if (!isEnabled || state.workspaces.activeWorkspaceUid !== workspaceUid) {
+        return;
+      }
+
+      // Re-check: the user may have mounted this collection while the queue was running.
+      const nextUid = queue.shift();
+      const collection = state.collections.collections.find((c) => c.uid === nextUid);
+      if (collection?.mountStatus !== 'unmounted') {
+        continue;
+      }
+
+      try {
+        await dispatch(mountCollection({
+          collectionUid: collection.uid,
+          collectionPathname: collection.pathname,
+          brunoConfig: collection.brunoConfig,
+          skipTabRestore: true,
+          workspacePathname: workspace.pathname || null
+        }));
+      } catch (err) {
+        // mountCollection rejects without an error object, so the path is the useful part.
+        console.error(`Failed to load collection ${collection.pathname}:`, err);
+      }
+    }
+  };
+
+  await Promise.all(Array.from({ length: LOAD_ALL_COLLECTIONS_CONCURRENCY }, worker));
+};
+
+/**
+ * Mounts every unmounted collection of a workspace in the background, a couple at a time.
+ * Does nothing unless the "load-all-collections" beta preference is on. Defaults to the active
+ * workspace. A call made while a run is in progress joins it and triggers one more pass for the
+ * then-active workspace, so collections that appeared mid-run, or a workspace switch, are covered.
+ */
+export const mountWorkspaceCollections = (workspaceUid = null) => (dispatch, getState) => {
+  if (!getState().app.preferences?.beta?.[BETA_FEATURES.LOAD_ALL_COLLECTIONS]) {
+    return Promise.resolve();
+  }
+
+  if (loadAllRun) {
+    loadAllRerunRequested = true;
+    return loadAllRun;
+  }
+
+  loadAllRun = (async () => {
+    try {
+      let uid = workspaceUid ?? getState().workspaces.activeWorkspaceUid;
+      do {
+        loadAllRerunRequested = false;
+        await mountUnmountedWorkspaceCollections(dispatch, getState, uid);
+        uid = getState().workspaces.activeWorkspaceUid;
+      } while (loadAllRerunRequested);
+    } finally {
+      loadAllRun = null;
+    }
+  })();
+  return loadAllRun;
+};
 
 export const showInFolder = (collectionPath) => () => {
   return new Promise((resolve, reject) => {

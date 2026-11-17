@@ -8,7 +8,7 @@ import {
   updateWorkspaceLoadingState,
   setWorkspaceScratchCollection
 } from '../workspaces';
-import { createCollection, openMultipleCollections, openScratchCollectionEvent, mountCollection, hydrateCollectionWithUiStateSnapshot } from '../collections/actions';
+import { createCollection, openMultipleCollections, openScratchCollectionEvent, mountCollection, mountWorkspaceCollections, hydrateCollectionWithUiStateSnapshot } from '../collections/actions';
 import { removeCollection, addTransientDirectory, updateCollectionMountStatus, expandCollection, sortCollections } from '../collections';
 import { sanitizeName } from 'utils/common/regex';
 import { clearCollectionState } from '../openapi-sync';
@@ -555,6 +555,10 @@ export const hydrateSnapshotForOpenedCollection = (collectionPathname) => {
 
     dispatch(markSnapshotCollectionHydrated({ pathname: collection.pathname }));
     maybeCompleteSnapshotHydrationSession(dispatch, getState);
+
+    // This collection arrived after switchWorkspace built its queue; let the loader pick it up.
+    dispatch(mountWorkspaceCollections(snapshotHydration.workspaceUid))
+      .catch((err) => console.error('Failed to load workspace collections:', err));
   };
 };
 
@@ -809,6 +813,11 @@ export const switchWorkspace = (workspaceUid) => {
       if (!completed && pendingCollectionPathnames.length > 0) {
         scheduleSnapshotHydrationTimeout(dispatch, getState, workspaceUid);
       }
+
+      // Background-load the remaining collections (no-op unless the beta preference is on).
+      // Not awaited: the active collection is already loaded and the UI must not wait on this.
+      dispatch(mountWorkspaceCollections(workspaceUid))
+        .catch((err) => console.error('Failed to load workspace collections:', err));
     } catch (error) {
       console.error('Failed to switch workspace:', error);
     } finally {
