@@ -37,7 +37,6 @@ import NewApp from 'components/Sidebar/NewApp';
 import RemoveCollections from '../RemoveCollections';
 import MoveToWorkspace from '../MoveToWorkspace';
 import { isPathExternalToBasePath } from 'utils/common/path';
-import { doesCollectionHaveItemsMatchingSearchText } from 'utils/collections/search';
 import { getSortedDraggedItems, countInvalidItems } from 'utils/collections';
 import { isTabForItemActive } from 'src/selectors/tab';
 
@@ -536,12 +535,6 @@ const CollectionRow = ({ collection, searchText, openBulkMenu, children, isColle
       }
     }
   ];
-
-  if (searchText && searchText.length) {
-    if (!doesCollectionHaveItemsMatchingSearchText(collection, searchText)) {
-      return null;
-    }
-  }
 
   return (
     <StyledWrapper className="flex flex-col">

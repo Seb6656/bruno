@@ -192,3 +192,83 @@ test.describe('Sidebar search filtering', () => {
     });
   });
 });
+
+test.describe('Sidebar search by folder and collection name', () => {
+  const LEDGER = 'Ledger';
+  const INVENTORY = 'Inventory';
+
+  test('shows everything inside a matched folder or collection, and only that', async ({ launchElectronApp, createTmpDir }) => {
+    const root = await createTmpDir('search-names');
+    const ledgerDir = path.join(root, LEDGER);
+    const inventoryDir = path.join(root, INVENTORY);
+
+    initBruCollection(ledgerDir, LEDGER);
+    writeBruRequest(ledgerDir, 'ping', { seq: 1 });
+    const refundsDir = writeBruFolder(ledgerDir, 'Refunds', 1);
+    writeBruRequest(refundsDir, 'create-charge', { seq: 1 });
+    writeBruRequest(refundsDir, 'issue-credit', { seq: 2 });
+
+    initBruCollection(inventoryDir, INVENTORY);
+    writeBruRequest(inventoryDir, 'stock-list', { seq: 1 });
+
+    const app = await launchElectronApp({
+      initUserDataPath: path.join(__dirname, 'init-user-data-two-collections'),
+      templateVars: {
+        collectionPath: ledgerDir.split(path.sep).join('/'),
+        secondCollectionPath: inventoryDir.split(path.sep).join('/')
+      }
+    });
+    const page = await waitForReadyPage(app);
+    const locators = buildCommonLocators(page);
+    const searchInput = page.getByTestId('sidebar-search-input');
+    const row = locators.sidebar.item;
+
+    try {
+      await test.step('Open both collections and add an app inside the folder', async () => {
+        // Collections must be mounted (opened) before their items are searchable.
+        await locators.sidebar.collection(INVENTORY).click();
+        await expect(row('stock-list')).toBeVisible({ timeout: 15000 });
+        await locators.sidebar.collection(LEDGER).click();
+        await expect(row('ping')).toBeVisible({ timeout: 15000 });
+        await expect(row('Refunds')).toBeVisible();
+
+        await createApp(page, 'tally', { collectionName: LEDGER, folderName: 'Refunds' });
+        await expandFolder(page, 'Refunds');
+        await expect(row('tally')).toBeVisible({ timeout: 10000 });
+
+        await page.getByTitle('Search requests').click();
+        await expect(searchInput).toHaveAttribute('placeholder', 'Search requests, folders, collections...');
+      });
+
+      await test.step('A folder name shows the folder with all its contents, apps included', async () => {
+        await searchInput.fill('refunds');
+        await expect(row('Refunds')).toBeVisible();
+        await expect(row('create-charge')).toBeVisible();
+        await expect(row('issue-credit')).toBeVisible();
+        await expect(row('tally')).toBeVisible();
+        await expect(row('ping')).toHaveCount(0);
+        await expect(row('stock-list')).toHaveCount(0);
+        await expect(locators.sidebar.collection(INVENTORY)).toHaveCount(0);
+      });
+
+      await test.step('A collection name shows the whole collection and hides the other one', async () => {
+        await searchInput.fill('ledger');
+        await expect(locators.sidebar.collection(LEDGER)).toBeVisible();
+        for (const name of ['ping', 'Refunds', 'create-charge', 'issue-credit', 'tally']) {
+          await expect(row(name)).toBeVisible();
+        }
+        await expect(locators.sidebar.collection(INVENTORY)).toHaveCount(0);
+        await expect(row('stock-list')).toHaveCount(0);
+      });
+
+      await test.step('A phrase spanning several names matches nothing', async () => {
+        await searchInput.fill('ledger refunds');
+        await expect(locators.sidebar.collection(LEDGER)).toHaveCount(0);
+        await expect(locators.sidebar.collection(INVENTORY)).toHaveCount(0);
+        await expect(row('Refunds')).toHaveCount(0);
+      });
+    } finally {
+      await closeElectronApp(app);
+    }
+  });
+});

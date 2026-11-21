@@ -61,7 +61,7 @@ describe('flattenSidebarTree', () => {
       const c = collection('C', [folder('match', [request('login')]), folder('nomatch', [request('health')])]);
       expect(names(flatten([loaded(c)], { searchText: 'login' }).filter((x) => x.kind === 'folder'))).toEqual(['match']);
     });
-    it('hides apps and empty-cta while searching', () => {
+    it('hides apps and empty-cta while searching when no folder or collection name matched', () => {
       const k = kinds(flatten([loaded(collection('C', [app('a'), request('login')]))], { searchText: 'login' }));
       expect(k).not.toContain('app');
       expect(k).not.toContain('empty-cta');
@@ -71,6 +71,53 @@ describe('flattenSidebarTree', () => {
       const rows = flatten([loaded(c)], { searchText: 'login' });
       expect(kinds(rows)).toContain('example');
       expect(names(rows.filter((r) => r.kind === 'example'))).toEqual(['ok']);
+    });
+  });
+
+  describe('search by folder and collection name', () => {
+    const billing = () => collection('Billing API', [
+      app('Dashboard', { seq: 1 }),
+      folder('Refunds', [request('Create refund', { seq: 1 }), app('Refund app', { seq: 1 })], { collapsed: true }),
+      folder('Other', [request('Ping')]),
+      request('Health', { seq: 2 })
+    ]);
+    const rowNames = (searchText, c = billing()) => names(flatten([loaded(c)], { searchText }));
+
+    it('shows a matched folder with everything inside it, apps included, and hides the rest', () => {
+      expect(rowNames('refund')).toEqual(['Billing API', 'Refunds', 'Refund app', 'Create refund']);
+    });
+    it('shows a whole matched collection, app rows included', () => {
+      const rows = rowNames('billing');
+      expect(rows).toEqual(expect.arrayContaining(['Billing API', 'Dashboard', 'Refunds', 'Create refund', 'Refund app', 'Other', 'Ping', 'Health']));
+      expect(rows).toHaveLength(8);
+    });
+    it('shows only the matching request and its ancestors for a request-name match', () => {
+      expect(rowNames('create ref')).toEqual(['Billing API', 'Refunds', 'Create refund']);
+    });
+    it('shows nothing when the phrase spans several names', () => {
+      expect(rowNames('billing refund')).toEqual([]);
+    });
+    it('is case-insensitive and trims the query', () => {
+      expect(rowNames('  REFUNDS ')).toEqual(['Billing API', 'Refunds', 'Refund app', 'Create refund']);
+    });
+    it('shows a matched empty folder along with its parents', () => {
+      const c = collection('C', [folder('outer', [folder('Refunds')]), folder('unrelated')]);
+      expect(rowNames('refunds', c)).toEqual(['C', 'outer', 'Refunds']);
+    });
+    it('shows a matched empty collection', () => {
+      expect(rowNames('billing', collection('Billing API', []))).toEqual(['Billing API']);
+    });
+    it('keeps apps hidden when only the app name matches', () => {
+      expect(rowNames('dashboard')).toEqual([]);
+      expect(rowNames('refund app')).toEqual([]);
+    });
+    it('shows apps nested in a matched folder at any depth', () => {
+      const c = collection('C', [folder('Refunds', [folder('inner', [app('deep-app')])])]);
+      expect(rowNames('refunds', c)).toEqual(['C', 'Refunds', 'inner', 'deep-app']);
+    });
+    it('still shows examples under every shown request', () => {
+      const c = collection('Billing API', [request('Pay', { examples: [{ uid: 'e1', name: 'ok' }] })]);
+      expect(kinds(flatten([loaded(c)], { searchText: 'billing' }))).toEqual(['collection', 'request', 'example']);
     });
   });
 

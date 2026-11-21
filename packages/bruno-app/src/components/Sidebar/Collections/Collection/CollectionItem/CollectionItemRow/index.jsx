@@ -38,7 +38,6 @@ import IgnoreCollectionItem from '../IgnoreCollectionItem';
 import RunCollectionItem from '../RunCollectionItem';
 import GenerateCodeItem from '../GenerateCodeItem';
 import { isItemARequest, isItemAFolder } from 'utils/tabs';
-import { doesRequestMatchSearchText, doesFolderHaveItemsMatchSearchText } from 'utils/collections/search';
 import { getDefaultRequestPaneTab, getItemTypeLabel } from 'utils/collections';
 import toast from 'react-hot-toast';
 import StyledWrapper from './StyledWrapper';
@@ -699,18 +698,6 @@ const CollectionItemRow = ({
     setIsKeyboardFocused(false);
     dispatch(setFocusedSidebarPath(null));
   };
-
-  if (searchText && searchText.length) {
-    if (isItemARequest(item)) {
-      if (!doesRequestMatchSearchText(item, searchText)) {
-        return null;
-      }
-    } else {
-      if (!doesFolderHaveItemsMatchSearchText(item, searchText)) {
-        return null;
-      }
-    }
-  }
 
   return (
     <StyledWrapper className={className}>
