@@ -1,11 +1,7 @@
 import { isItemAFolder, isItemARequest, isCollectionItemCollapsed } from './index';
 import { collectionSlug } from './collectionSlug';
 import { sortByNameThenSequence } from 'utils/common/index';
-import {
-  doesRequestMatchSearchText,
-  doesFolderHaveItemsMatchSearchText,
-  doesCollectionHaveItemsMatchingSearchText
-} from './search';
+import { getSidebarSearchMatch } from './search';
 
 const groupCollectionItems = (collectionItems) => {
   const folders = [];
@@ -40,7 +36,7 @@ const groupCollectionItems = (collectionItems) => {
  */
 const walkChildren = (
   collectionContext,
-  { collectionItems = [], depth, parentName, ancestorPath = [] }
+  { collectionItems = [], depth, parentName, ancestorPath = [], ancestorMatched = false }
 ) => {
   const {
     collectionUid,
@@ -62,7 +58,11 @@ const walkChildren = (
   const { folders, apps, requests } = groupCollectionItems(collectionItems);
 
   for (const folder of folders) {
-    if (hasSearch && !doesFolderHaveItemsMatchSearchText(folder, searchText)) {
+    const folderMatch = hasSearch
+      ? getSidebarSearchMatch(folder, searchText, ancestorMatched)
+      : null;
+
+    if (folderMatch && !folderMatch.isVisible) {
       continue;
     }
 
@@ -91,7 +91,8 @@ const walkChildren = (
       collectionItems: folder.items,
       depth: depth + 1,
       parentName: folder.name || null,
-      ancestorPath: [...ancestorPath, folder.uid]
+      ancestorPath: [...ancestorPath, folder.uid],
+      ancestorMatched: Boolean(folderMatch?.showAll)
     });
 
     if (!hasSearch && childCount === 0) {
@@ -109,7 +110,8 @@ const walkChildren = (
     }
   }
 
-  if (!hasSearch) {
+  // While searching, apps only show inside a folder or collection whose name matched.
+  if (!hasSearch || ancestorMatched) {
     for (const app of apps) {
       visibleChildCount++;
 
@@ -130,7 +132,7 @@ const walkChildren = (
   }
 
   for (const request of requests) {
-    if (hasSearch && !doesRequestMatchSearchText(request, searchText)) {
+    if (hasSearch && !getSidebarSearchMatch(request, searchText, ancestorMatched).isVisible) {
       continue;
     }
 
@@ -186,10 +188,11 @@ const flattenCollection = ({
   addItemToIndex,
   addCollectionToIndex
 }) => {
-  if (
-    hasSearch
-    && !doesCollectionHaveItemsMatchingSearchText(collection, searchText)
-  ) {
+  const collectionMatch = hasSearch
+    ? getSidebarSearchMatch(collection, searchText)
+    : null;
+
+  if (collectionMatch && !collectionMatch.isVisible) {
     return;
   }
 
@@ -228,7 +231,8 @@ const flattenCollection = ({
   const visibleChildCount = walkChildren(collectionContext, {
     collectionItems: collection.items,
     depth: 1,
-    parentName: null
+    parentName: null,
+    ancestorMatched: Boolean(collectionMatch?.showAll)
   });
 
   // Append the collection-root empty-state CTA row.

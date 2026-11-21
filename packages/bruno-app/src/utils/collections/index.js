@@ -13,11 +13,7 @@ import {
   mockDataFunctions
 } from '@usebruno/common';
 import { VARIABLE_ADD_SCOPES, AUTOCOMPLETE_SCOPES } from 'utils/common/constants';
-import {
-  doesRequestMatchSearchText,
-  doesFolderHaveItemsMatchSearchText,
-  doesCollectionHaveItemsMatchingSearchText
-} from 'utils/collections/search';
+import { getSidebarSearchMatch } from 'utils/collections/search';
 import { nextCopyName, resolveEnvironmentInheritance, toVariablesMap } from '@usebruno/common/utils';
 
 const replaceTabsWithSpaces = (str, numSpaces = 2) => {
@@ -2212,25 +2208,26 @@ export const getVisibleSidebarUidsInOrder = ({ sidebarEntries = [], searchText =
   const hasSearchText = Boolean(searchText && searchText.trim().length);
   const uids = [];
 
-  const visitItems = (items = []) => {
+  const visitItems = (items = [], ancestorMatched = false) => {
     const folderItems = sortByNameThenSequence(filter(items, (i) => isItemAFolder(i) && !i.isTransient));
     const appItems = [...filter(items, (i) => i.type === 'app' && !i.isTransient)].sort((a, b) => a.seq - b.seq);
     const requestItems = [...filter(items, (i) => isItemARequest(i) && !i.isTransient)].sort((a, b) => a.seq - b.seq);
 
     folderItems.forEach((folder) => {
-      if (hasSearchText && !doesFolderHaveItemsMatchSearchText(folder, searchText)) return;
+      const folderMatch = hasSearchText ? getSidebarSearchMatch(folder, searchText, ancestorMatched) : null;
+      if (folderMatch && !folderMatch.isVisible) return;
       uids.push(folder.uid);
       if (hasSearchText || !folder.collapsed) {
-        visitItems(folder.items);
+        visitItems(folder.items, Boolean(folderMatch?.showAll));
       }
     });
 
-    if (!hasSearchText) {
+    if (!hasSearchText || ancestorMatched) {
       appItems.forEach((app) => uids.push(app.uid));
     }
 
     requestItems.forEach((request) => {
-      if (hasSearchText && !doesRequestMatchSearchText(request, searchText)) return;
+      if (hasSearchText && !getSidebarSearchMatch(request, searchText, ancestorMatched).isVisible) return;
       uids.push(request.uid);
 
       const examplesVisible = request.type === 'http-request' && (hasSearchText || !isCollectionItemCollapsed(request));
@@ -2243,10 +2240,11 @@ export const getVisibleSidebarUidsInOrder = ({ sidebarEntries = [], searchText =
   sidebarEntries.forEach((entry) => {
     if (entry.kind !== 'loaded') return;
     const { collection } = entry;
-    if (hasSearchText && !doesCollectionHaveItemsMatchingSearchText(collection, searchText)) return;
+    const collectionMatch = hasSearchText ? getSidebarSearchMatch(collection, searchText) : null;
+    if (collectionMatch && !collectionMatch.isVisible) return;
     uids.push(collection.uid);
     if (hasSearchText || !collection.collapsed) {
-      visitItems(collection.items);
+      visitItems(collection.items, Boolean(collectionMatch?.showAll));
     }
   });
 

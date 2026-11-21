@@ -1,4 +1,5 @@
 const { describe, it, expect } = require('@jest/globals');
+import { flattenSidebarTree } from './flattenSidebarTree';
 import {
   mergeHeaders,
   transformRequestToSaveToFilesystem,
@@ -776,6 +777,56 @@ describe('getVisibleSidebarUidsInOrder', () => {
 
     expect(getVisibleSidebarUidsInOrder({ sidebarEntries, searchText: 'root' }))
       .toEqual(['colA', 'reqRoot', 'ex1']);
+  });
+});
+
+describe('getVisibleSidebarUidsInOrder parity with flattenSidebarTree', () => {
+  const req = (uid, name, props = {}) => ({ uid, name, type: 'http-request', request: {}, seq: 1, ...props });
+  const fol = (uid, name, items = [], props = {}) => ({ uid, name, type: 'folder', items, ...props });
+  const appItem = (uid, name, seq = 1) => ({ uid, name, type: 'app', seq });
+  const col = (uid, name, items, props = {}) => ({ uid, name, pathname: `/${uid}`, mountStatus: 'mounted', collapsed: false, items, ...props });
+
+  const entries = [
+    {
+      kind: 'loaded',
+      collection: col('c1', 'Billing API', [
+        appItem('app-root', 'Dashboard'),
+        fol('f-refunds', 'Refunds', [
+          req('r-create', 'Create refund', { examples: [{ uid: 'ex-1', name: 'ok' }, { uid: 'ex-2', name: 'bad' }] }),
+          appItem('app-refund', 'Refund app'),
+          fol('f-nested', 'Nested', [req('r-deep', 'Deep call'), appItem('app-deep', 'Deep app')]),
+          fol('f-empty', 'Empty refunds')
+        ], { collapsed: true }),
+        fol('f-other', 'Other', [req('r-ping', 'Ping'), fol('f-inner', 'Inner', [req('r-inner', 'Inner refund')])]),
+        req('r-health', 'Health', { seq: 2 }),
+        req('r-draft', 'Draft refund', { seq: 3, isTransient: true })
+      ])
+    },
+    { kind: 'ghost', entry: { name: 'Missing', path: '/ghost' } },
+    { kind: 'loaded', collection: col('c2', 'Empty collection', [], { collapsed: true }) },
+    { kind: 'loaded', collection: col('c3', 'Users', [req('r-user', 'Get user', { examples: [{ uid: 'ex-3', name: 'ok' }] }), appItem('app-u', 'User app')]) }
+  ];
+
+  const rowUid = (row) => {
+    if (row.kind === 'collection') return row.collectionUid;
+    if (row.kind === 'example') return row.exampleUid;
+    return row.itemUid;
+  };
+
+  const queries = ['', 'refund', 'REFUNDS', 'billing', 'create ref', 'billing refund', 'deep', 'nested', 'empty', 'user', 'dashboard', 'app', 'ping', 'inner', 'draft', 'zzz', '  health  '];
+
+  it.each(queries)('returns the same uids in the same order as the rendered rows for %p', (searchText) => {
+    const rows = flattenSidebarTree(entries, { searchText }).rows
+      .filter((row) => row.kind !== 'ghost' && row.kind !== 'empty-cta');
+
+    expect(getVisibleSidebarUidsInOrder({ sidebarEntries: entries, searchText })).toEqual(rows.map(rowUid));
+  });
+
+  it('actually exercises matched folders, apps and examples', () => {
+    const uids = getVisibleSidebarUidsInOrder({ sidebarEntries: entries, searchText: 'refund' });
+    expect(uids).toEqual(expect.arrayContaining(['f-refunds', 'app-refund', 'app-deep', 'ex-1', 'f-empty', 'r-inner']));
+    expect(uids).not.toContain('app-root');
+    expect(uids).not.toContain('r-draft');
   });
 });
 
