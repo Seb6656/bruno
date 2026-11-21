@@ -1,5 +1,5 @@
 import { expect, test } from '../../playwright';
-import { buildCommonLocators, closeAllCollections, createRequest } from '../utils/page';
+import { buildCommonLocators, closeAllCollections, createFolder, createRequest } from '../utils/page';
 import {
   closePreferencesTab,
   collectionName,
@@ -87,6 +87,61 @@ test.describe('Shortcut Keys - BOUND_ACTIONS', () => {
           await expect(locators.tabs.activeRequestTab()).toContainText(requestName);
           await expect(locators.tabs.requestTab(requestName)).toHaveCount(1);
         });
+      });
+    });
+
+    test.describe('Global Search result location', () => {
+      const searchFor = async (page, text: string) => {
+        await pressShortcut(page, modifier, 'KeyK');
+        const input = page.getByTestId('global-search-input');
+        await expect(input).toBeVisible();
+        await input.fill(text);
+      };
+
+      test('request at the collection root shows the collection name as its location', async ({
+        pageWithUserData: page
+      }) => {
+        const requestName = 'kb-loc-root-request';
+        await createRequest(page, requestName, collectionName, { url: 'https://echo.usebruno.com', method: 'GET' });
+
+        await searchFor(page, requestName);
+        const result = page.getByRole('option', { name: new RegExp(`^${requestName},`) });
+        await expect(result).toBeVisible();
+        await expect(result.getByTestId('result-location')).toHaveText(collectionName);
+        await expect(result).toHaveAccessibleName(new RegExp(`, in ${collectionName}$`));
+
+        await pressShortcut(page, 'Escape');
+      });
+
+      test('request and folder results show their location with the › separator', async ({
+        pageWithUserData: page
+      }) => {
+        const folderName = 'kb-loc-folder';
+        const requestName = 'kb-loc-nested-request';
+        await createFolder(page, folderName, collectionName);
+        await createRequest(page, requestName, folderName, {
+          url: 'https://echo.usebruno.com',
+          method: 'GET',
+          inFolder: true
+        });
+
+        await test.step('Request result shows collection › folder', async () => {
+          await searchFor(page, requestName);
+          const result = page.getByRole('option', { name: new RegExp(`^${requestName},`) });
+          await expect(result).toBeVisible();
+          await expect(result.getByTestId('result-location')).toHaveText(`${collectionName} › ${folderName}`);
+          await expect(result).toHaveAccessibleName(new RegExp(`, in ${collectionName} › ${folderName}$`));
+        });
+
+        await test.step('Folder result shows its path with the › separator', async () => {
+          await page.getByTestId('global-search-input').fill(folderName);
+          const result = page.getByRole('option', { name: new RegExp(`^${folderName},`) });
+          await expect(result).toBeVisible();
+          await expect(result).toContainText(`${collectionName} › ${folderName}`);
+          await expect(result.getByTestId('result-location')).toHaveCount(0);
+        });
+
+        await pressShortcut(page, 'Escape');
       });
     });
   });
