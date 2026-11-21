@@ -2,6 +2,7 @@ import React, { useEffect, useCallback, useMemo, useRef } from 'react';
 import { useFormik } from 'formik';
 import { useSelector, useDispatch } from 'react-redux';
 import { savePreferences, updateActivePreferencesTab } from 'providers/ReduxStore/slices/app';
+import { mountWorkspaceCollections } from 'providers/ReduxStore/slices/collections/actions';
 import StyledWrapper from './StyledWrapper';
 import * as Yup from 'yup';
 import debounce from 'lodash/debounce';
@@ -78,6 +79,13 @@ const BETA_FEATURES = [
     label: 'gRPC Scripting',
     description: 'Write scripts for gRPC requests. Inspect messages, metadata, and status across the call lifecycle.',
     docsUrl: 'https://link.usebruno.com/docs/grpc-scripting'
+  },
+  {
+    id: BETA_FEATURE_IDS.LOAD_ALL_COLLECTIONS,
+    label: 'Load all collections automatically',
+    description:
+      'Loads every collection in the workspace when Bruno starts or you switch workspace, so search covers all of them. May slow startup for large workspaces. Turning on File cache makes this faster.',
+    toggle: true
   }
 ];
 
@@ -128,6 +136,7 @@ const Beta = ({ close }) => {
 
   const handleSave = useCallback((newBetaPreferences) => {
     const wasMockServerEnabled = preferences?.beta?.[BETA_FEATURE_IDS.MOCK_SERVER];
+    const wasLoadAllEnabled = preferences?.beta?.[BETA_FEATURE_IDS.LOAD_ALL_COLLECTIONS];
     dispatch(
       savePreferences({
         ...preferences,
@@ -138,6 +147,13 @@ const Beta = ({ close }) => {
       })
     )
       .then(() => handleMockServerSaved(wasMockServerEnabled, newBetaPreferences[BETA_FEATURE_IDS.MOCK_SERVER]))
+      .then(() => {
+        // Turning it on loads everything right away; turning it off unloads nothing.
+        if (!wasLoadAllEnabled && newBetaPreferences[BETA_FEATURE_IDS.LOAD_ALL_COLLECTIONS]) {
+          dispatch(mountWorkspaceCollections())
+            .catch((err) => console.error('Failed to load workspace collections:', err));
+        }
+      })
       .catch((err) => {
         console.log(err);
         toast.error('Failed to update beta preferences');
@@ -211,7 +227,7 @@ const Beta = ({ close }) => {
                       size="xs"
                       isOn={formik.values[feature.id]}
                       handleToggle={() => handleToggle(feature.id)}
-                      data-testid="mock-server-beta-toggle"
+                      data-testid={`${feature.id}-beta-toggle`}
                     />
                   </div>
                 )}

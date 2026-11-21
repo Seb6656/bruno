@@ -16,7 +16,8 @@ jest.mock('react-hot-toast', () => ({
 }));
 
 jest.mock('../collections/actions', () => ({
-  mountCollection: jest.fn(() => () => Promise.resolve())
+  mountCollection: jest.fn(() => () => Promise.resolve()),
+  mountWorkspaceCollections: jest.fn(() => () => Promise.resolve())
 }));
 
 import { configureStore } from '@reduxjs/toolkit';
@@ -25,6 +26,7 @@ import collectionsReducer from '../collections';
 import appReducer from '../app';
 import tabsReducer from '../tabs';
 import { hydrateSnapshotForOpenedCollection } from './actions';
+import { mountWorkspaceCollections } from '../collections/actions';
 
 const WORKSPACE_UID = 'workspace-a';
 const WORKSPACE_PATH = '/workspaces/team';
@@ -113,5 +115,13 @@ describe('restoring a collection opened during snapshot hydration', () => {
 
     expect(openTabTypes(store)).toEqual(['variables', 'mock-server', 'mock-response']);
     expect(activeTabType(store)).toBe('mock-response');
+  });
+
+  it('asks the collection loader to pick up a collection that opened late', async () => {
+    const store = createStore(true);
+
+    await store.dispatch(hydrateSnapshotForOpenedCollection(COLLECTION_PATH));
+
+    expect(mountWorkspaceCollections).toHaveBeenCalledWith(WORKSPACE_UID);
   });
 });

@@ -25,6 +25,12 @@ export const buildPreferencesLocators = (page: Page) => ({
     input: (action: string) => page.getByTestId(`keybinding-input-${action}`),
     resetButton: (action: string) => page.getByTestId(`keybinding-reset-${action}`)
   },
+  /** Locators on the Beta panel */
+  beta: {
+    /** The on/off switch for "Load all collections automatically" */
+    loadAllCollectionsSwitch: () => page.getByTestId('load-all-collections-beta-toggle').locator('label'),
+    loadAllCollectionsCheckbox: () => page.getByTestId('load-all-collections-beta-toggle').locator('input[type="checkbox"]')
+  },
   /** The open Preferences tab in the tab bar */
   openTab: () => page.locator('.request-tab').filter({ hasText: 'Preferences' }),
   /** Close control on the open Preferences tab */
