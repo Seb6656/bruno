@@ -193,6 +193,14 @@ const StyledWrapper = styled.div`
     text-overflow: ellipsis;
     letter-spacing: 0.1px;
   }
+  .result-location {
+    margin-top: 2px;
+    font-size: ${(props) => props.theme.font.size.xs};
+    color: ${(props) => rgba(props.theme.colors.text.muted, 0.8)};
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .method-badge {
     font-size: 0.625rem;
     font-weight: 500;

@@ -22,6 +22,8 @@ export const SEARCH_CONFIG = {
   DEBOUNCE_DELAY: 300
 };
 
+export const LOCATION_SEPARATOR = ' › ';
+
 export const DOCUMENTATION_RESULT = {
   type: SEARCH_TYPES.DOCUMENTATION,
   item: { id: 'docs', name: 'Bruno Documentation' },

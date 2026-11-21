@@ -16,8 +16,8 @@ import { expandCollection } from 'providers/ReduxStore/slices/collections';
 import { mountCollection, revealItemInSidebar, revealTabInSidebar } from 'providers/ReduxStore/slices/collections/actions';
 import { getDefaultRequestPaneTab } from 'utils/collections';
 import { normalizePath } from 'utils/common/path';
-import { normalizeQuery, isValidQuery, highlightText, sortResults, getTypeLabel, getItemPath } from './utils/searchUtils';
-import { SEARCH_TYPES, MATCH_TYPES, SEARCH_CONFIG, DOCUMENTATION_RESULT } from './constants';
+import { normalizeQuery, isValidQuery, highlightText, sortResults, getTypeLabel, getItemPathParts } from './utils/searchUtils';
+import { SEARCH_TYPES, MATCH_TYPES, SEARCH_CONFIG, DOCUMENTATION_RESULT, LOCATION_SEPARATOR } from './constants';
 import StyledWrapper from './StyledWrapper';
 
 const GlobalSearchModal = ({ isOpen, onClose }) => {
@@ -85,7 +85,8 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
       // Search collection items
       const flattenedItems = flattenItems(collection.items);
       flattenedItems.forEach((item) => {
-        const itemPath = getItemPath(item, collection, findParentItemInCollection);
+        const pathParts = getItemPathParts(item, collection, findParentItemInCollection);
+        const itemPath = pathParts.join('/');
         const itemPathLower = itemPath.toLowerCase();
 
         if (isItemARequest(item)) {
@@ -111,6 +112,7 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
               item,
               name: item.name,
               path: itemPath,
+              location: pathParts.slice(0, -1).join(LOCATION_SEPARATOR),
               matchType: nameMatch ? MATCH_TYPES.REQUEST : urlMatch ? MATCH_TYPES.URL : MATCH_TYPES.PATH,
               method,
               collectionUid: collection.uid
@@ -125,7 +127,7 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
               type: SEARCH_TYPES.FOLDER,
               item,
               name: item.name,
-              path: itemPath,
+              path: pathParts.join(LOCATION_SEPARATOR),
               matchType: nameMatch ? MATCH_TYPES.FOLDER : MATCH_TYPES.PATH,
               collectionUid: collection.uid
             });
@@ -465,7 +467,7 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
                     data-type={result.type}
                     role="option"
                     aria-selected={isSelected}
-                    aria-label={`${result.name}, ${typeLabel || result.type}${result.method ? `, ${result.method}` : ''}`}
+                    aria-label={`${result.name}, ${typeLabel || result.type}${result.method ? `, ${result.method}` : ''}${result.location ? `, in ${result.location}` : ''}`}
                     tabIndex={-1}
                   >
                     <div className="result-icon">
@@ -483,6 +485,11 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
                               ? highlightText(result.item.request?.url || '', query)
                               : highlightText(result.path, query)}
                         </div>
+                        {result.type === SEARCH_TYPES.REQUEST && result.location && (
+                          <div className="result-location" data-testid="result-location">
+                            {highlightText(result.location, query)}
+                          </div>
+                        )}
                       </div>
                       <div className="result-badges">
                         {result.type === SEARCH_TYPES.REQUEST && result.method && (

@@ -72,7 +72,7 @@ export const getTypeLabel = (type) => {
   return baseLabels[type] || '';
 };
 
-export const getItemPath = (item, collection, findParentItemInCollection) => {
+export const getItemPathParts = (item, collection, findParentItemInCollection) => {
   const pathParts = [];
   let currentItem = item;
   let depth = 0;
@@ -90,5 +90,5 @@ export const getItemPath = (item, collection, findParentItemInCollection) => {
   }
 
   pathParts.unshift(collection.name);
-  return pathParts.join('/');
+  return pathParts;
 };
