@@ -115,6 +115,8 @@ const RequestBodyMode = ({ item, collection }) => {
         <MenuDropdown
           items={menuItems}
           placement="bottom-end"
+          appendTo={() => document.body}
+          hideOnReferenceClip={true}
           selectedItemId={bodyMode}
           showGroupDividers={false}
           groupStyle="select"

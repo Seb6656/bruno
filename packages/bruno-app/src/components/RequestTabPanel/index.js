@@ -728,6 +728,7 @@ const RequestTabPanel = () => {
           {!requestPaneCollapsed && !responsePaneCollapsed && (
             <div
               className="dragbar-wrapper"
+              data-testid="request-response-dragbar"
               onMouseDown={handleDragbarMouseDown}
             >
               <div className="dragbar-handle" />
