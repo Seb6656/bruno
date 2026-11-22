@@ -1,5 +1,9 @@
 import { Page, test } from '../../../playwright';
 
+/** Title-bar layout toggle tooltips: named for the current layout. */
+export const LAYOUT_TOGGLE_TITLE_WHEN_SIDE_BY_SIDE = 'Stack response below request';
+export const LAYOUT_TOGGLE_TITLE_WHEN_STACKED = 'Show response beside request';
+
 export const buildTitleBarLocators = (page: Page) => ({
   workspaceMenuTrigger: () => page.getByTestId('workspace-menu'),
   activeWorkspaceName: () => page.getByTestId('workspace-menu').getByTestId('workspace-name'),

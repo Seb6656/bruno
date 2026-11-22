@@ -1,4 +1,5 @@
 import { expect, test } from '../../playwright';
+import { LAYOUT_TOGGLE_TITLE_WHEN_SIDE_BY_SIDE, LAYOUT_TOGGLE_TITLE_WHEN_STACKED } from '../utils/page/title-bar';
 import { closeAllCollections, createRequest, selectRequestPaneTab } from '../utils/page';
 import {
   modifier,
@@ -242,21 +243,21 @@ test.describe('Shortcut Keys - BOUND_ACTIONS', () => {
 
         await expect(
           page.getByTestId('response-layout-toggle-btn')
-        ).toHaveAttribute('title', 'Switch to horizontal layout');
+        ).toHaveAttribute('title', LAYOUT_TOGGLE_TITLE_WHEN_STACKED);
 
         // Press Cmd/Ctrl+J to change layout
         await pressShortcut(page, modifier, 'KeyJ');
 
         await expect(
           page.getByTestId('response-layout-toggle-btn')
-        ).toHaveAttribute('title', 'Switch to vertical layout');
+        ).toHaveAttribute('title', LAYOUT_TOGGLE_TITLE_WHEN_SIDE_BY_SIDE);
 
         // Press Cmd/Ctrl+J to change layout
         await pressShortcut(page, modifier, 'KeyJ');
 
         await expect(
           page.getByTestId('response-layout-toggle-btn')
-        ).toHaveAttribute('title', 'Switch to horizontal layout');
+        ).toHaveAttribute('title', LAYOUT_TOGGLE_TITLE_WHEN_STACKED);
       });
     });
 
@@ -278,21 +279,21 @@ test.describe('Shortcut Keys - BOUND_ACTIONS', () => {
 
         await expect(
           page.getByTestId('response-layout-toggle-btn')
-        ).toHaveAttribute('title', 'Switch to horizontal layout');
+        ).toHaveAttribute('title', LAYOUT_TOGGLE_TITLE_WHEN_STACKED);
 
         // Press Alt+Shift+Y to change layout
         await pressShortcut(page, 'Alt', 'Shift', 'KeyY');
 
         await expect(
           page.getByTestId('response-layout-toggle-btn')
-        ).toHaveAttribute('title', 'Switch to vertical layout');
+        ).toHaveAttribute('title', LAYOUT_TOGGLE_TITLE_WHEN_SIDE_BY_SIDE);
 
         // Press Alt+Shift+Y to change layout
         await pressShortcut(page, 'Alt', 'Shift', 'KeyY');
 
         await expect(
           page.getByTestId('response-layout-toggle-btn')
-        ).toHaveAttribute('title', 'Switch to horizontal layout');
+        ).toHaveAttribute('title', LAYOUT_TOGGLE_TITLE_WHEN_STACKED);
       });
     });
   });

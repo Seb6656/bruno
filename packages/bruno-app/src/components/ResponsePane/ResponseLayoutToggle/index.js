@@ -56,19 +56,23 @@ export const useResponseLayoutToggle = () => {
   const preferences = useSelector((state) => state.app.preferences);
   const orientation = preferences?.layout?.responsePaneOrientation || 'horizontal';
 
-  const toggleOrientation = () => {
-    const newOrientation = orientation === 'horizontal' ? 'vertical' : 'horizontal';
+  const setOrientation = (newOrientation) => {
+    if (newOrientation === orientation) return;
     const updatedPreferences = {
       ...preferences,
       layout: {
-        ...preferences.layout,
+        ...preferences?.layout,
         responsePaneOrientation: newOrientation
       }
     };
     dispatch(savePreferences(updatedPreferences));
   };
 
-  return { orientation, toggleOrientation };
+  const toggleOrientation = () => {
+    setOrientation(orientation === 'horizontal' ? 'vertical' : 'horizontal');
+  };
+
+  return { orientation, setOrientation, toggleOrientation };
 };
 
 const ResponseLayoutToggle = forwardRef(({ children }, ref) => {
@@ -80,7 +84,7 @@ const ResponseLayoutToggle = forwardRef(({ children }, ref) => {
     isDisabled: false
   }), []);
 
-  const title = !children ? (orientation === 'horizontal' ? 'Switch to vertical layout' : 'Switch to horizontal layout') : null;
+  const title = !children ? (orientation === 'horizontal' ? 'Stack response below request' : 'Show response beside request') : null;
 
   return (
     <div

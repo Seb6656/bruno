@@ -1,5 +1,6 @@
 import { test, expect } from '../../../playwright';
 import { buildCommonLocators, openRequest, selectScriptSubTab, setWindowContentSize } from '../../utils/page';
+import { LAYOUT_TOGGLE_TITLE_WHEN_SIDE_BY_SIDE, LAYOUT_TOGGLE_TITLE_WHEN_STACKED } from '../../utils/page/title-bar';
 
 const COLLECTION_NAME = 'ScriptSubTabsOverflow';
 const REQUEST_NAME = 'LifecycleHooks';
@@ -17,7 +18,7 @@ test.describe('Script sub-tabs overflow', () => {
     await openRequest(page, COLLECTION_NAME, REQUEST_NAME);
 
     await test.step('Side by side, the selected hook stays in the row while others collapse', async () => {
-      await expect(locators.titleBar.responseLayoutToggle()).toHaveAttribute('title', 'Switch to vertical layout');
+      await expect(locators.titleBar.responseLayoutToggle()).toHaveAttribute('title', LAYOUT_TOGGLE_TITLE_WHEN_SIDE_BY_SIDE);
 
       await selectScriptSubTab(page, 'after-call-end');
 
@@ -29,7 +30,7 @@ test.describe('Script sub-tabs overflow', () => {
 
     await test.step('Stacked, every hook is in the row and the selection is kept', async () => {
       await locators.titleBar.responseLayoutToggle().click();
-      await expect(locators.titleBar.responseLayoutToggle()).toHaveAttribute('title', 'Switch to horizontal layout');
+      await expect(locators.titleBar.responseLayoutToggle()).toHaveAttribute('title', LAYOUT_TOGGLE_TITLE_WHEN_STACKED);
 
       for (const hook of GRPC_HOOKS) {
         await expect(locators.paneTabs.tabTrigger(hook)).toBeVisible();
