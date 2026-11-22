@@ -219,6 +219,8 @@ const OAuth1 = ({ item = {}, collection, request, save, updateAuth, readOnly }) 
             data-testid="oauth1-signature-method-dropdown"
             selectedItemId={oauth1.signatureMethod}
             placement="bottom-end"
+            appendTo={() => document.body}
+            hideOnReferenceClip={true}
           >
             <div className="flex items-center justify-end oauth1-dropdown-label select-none">
               {signatureMethodLabels[oauth1.signatureMethod] || 'HMAC-SHA1'}
