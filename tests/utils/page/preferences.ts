@@ -31,6 +31,13 @@ export const buildPreferencesLocators = (page: Page) => ({
     loadAllCollectionsSwitch: () => page.getByTestId('load-all-collections-beta-toggle').locator('label'),
     loadAllCollectionsCheckbox: () => page.getByTestId('load-all-collections-beta-toggle').locator('input[type="checkbox"]')
   },
+  /** Locators on the Display panel */
+  display: {
+    /** The "Request / response layout" segmented control */
+    layoutOrientation: () => page.getByTestId('preferences-layout-orientation'),
+    /** A layout option's radio input, by stored value */
+    layoutOption: (orientation: 'horizontal' | 'vertical') => page.getByTestId(`layout-orientation-${orientation}`)
+  },
   /** The open Preferences tab in the tab bar */
   openTab: () => page.locator('.request-tab').filter({ hasText: 'Preferences' }),
   /** Close control on the open Preferences tab */

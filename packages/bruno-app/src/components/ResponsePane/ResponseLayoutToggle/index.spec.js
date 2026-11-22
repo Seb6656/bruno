@@ -4,7 +4,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { ThemeProvider } from 'providers/Theme';
 import { configureStore, createSlice } from '@reduxjs/toolkit';
-import ResponseLayoutToggle from './index';
+import ResponseLayoutToggle, { useResponseLayoutToggle } from './index';
 
 const mockSavePreferences = jest.fn((payload) => ({ type: 'app/savePreferences', payload }));
 
@@ -86,7 +86,7 @@ describe('ResponseLayoutToggle', () => {
       renderWithProviders(<ResponseLayoutToggle />);
       const button = screen.getByTestId('response-layout-toggle-btn');
       expect(button).toBeInTheDocument();
-      expect(button).toHaveAttribute('title', 'Switch to vertical layout');
+      expect(button).toHaveAttribute('title', 'Stack response below request');
     });
 
     it('should render with vertical orientation when specified', () => {
@@ -102,7 +102,7 @@ describe('ResponseLayoutToggle', () => {
       renderWithProviders(<ResponseLayoutToggle />, customState);
       const button = screen.getByTestId('response-layout-toggle-btn');
       expect(button).toBeInTheDocument();
-      expect(button).toHaveAttribute('title', 'Switch to horizontal layout');
+      expect(button).toHaveAttribute('title', 'Show response beside request');
     });
   });
 
@@ -112,7 +112,7 @@ describe('ResponseLayoutToggle', () => {
       const button = screen.getByTestId('response-layout-toggle-btn');
 
       // Initial state check
-      expect(button).toHaveAttribute('title', 'Switch to vertical layout');
+      expect(button).toHaveAttribute('title', 'Stack response below request');
 
       fireEvent.click(button);
 
@@ -131,7 +131,7 @@ describe('ResponseLayoutToggle', () => {
       }));
 
       // Check if button title was updated
-      expect(button).toHaveAttribute('title', 'Switch to horizontal layout');
+      expect(button).toHaveAttribute('title', 'Show response beside request');
     });
 
     it('should switch to horizontal layout when clicked in vertical mode', () => {
@@ -148,7 +148,7 @@ describe('ResponseLayoutToggle', () => {
       const button = screen.getByTestId('response-layout-toggle-btn');
 
       // Initial state check
-      expect(button).toHaveAttribute('title', 'Switch to horizontal layout');
+      expect(button).toHaveAttribute('title', 'Show response beside request');
 
       fireEvent.click(button);
 
@@ -167,7 +167,28 @@ describe('ResponseLayoutToggle', () => {
       }));
 
       // Check if button title was updated
-      expect(button).toHaveAttribute('title', 'Switch to vertical layout');
+      expect(button).toHaveAttribute('title', 'Stack response below request');
+    });
+  });
+
+  describe('useResponseLayoutToggle', () => {
+    const HookProbe = ({ target }) => {
+      const { setOrientation } = useResponseLayoutToggle();
+      return <button data-testid="probe" onClick={() => setOrientation(target)} />;
+    };
+
+    it('setOrientation saves the new orientation', () => {
+      renderWithProviders(<HookProbe target="vertical" />);
+      fireEvent.click(screen.getByTestId('probe'));
+      expect(mockSavePreferences).toHaveBeenCalledWith({
+        layout: { responsePaneOrientation: 'vertical' }
+      });
+    });
+
+    it('setOrientation does not save when the value is unchanged', () => {
+      renderWithProviders(<HookProbe target="horizontal" />);
+      fireEvent.click(screen.getByTestId('probe'));
+      expect(mockSavePreferences).not.toHaveBeenCalled();
     });
   });
 });
