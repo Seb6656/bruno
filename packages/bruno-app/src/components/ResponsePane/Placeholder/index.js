@@ -22,17 +22,25 @@ const Placeholder = () => {
     }));
   }, [preferences?.keyBindings, os]);
 
-  const iconSize = isVerticalLayout ? 80 : 150;
+  // Stacked: the response pane is short and wide, so show only the Send Request hint on one line.
+  if (isVerticalLayout) {
+    const sendRequest = keyBindingActions.find(({ action }) => action === 'sendRequest');
+    return (
+      <StyledWrapper className="vertical-layout" data-testid="response-pane-shortcut-placeholder">
+        <div className="flex items-center gap-3">
+          <div data-testid="response-placeholder-shortcut-label-sendRequest">{sendRequest.label}</div>
+          <div data-testid="response-placeholder-shortcut-value-sendRequest">{sendRequest.shortcut}</div>
+        </div>
+      </StyledWrapper>
+    );
+  }
 
   return (
-    <StyledWrapper
-      className={`${isVerticalLayout ? 'vertical-layout' : ''}`}
-      data-testid="response-pane-shortcut-placeholder"
-    >
-      <div className="send-icon flex justify-center" style={{ fontSize: isVerticalLayout ? 100 : 200 }}>
-        <IconSend size={iconSize} strokeWidth={1} />
+    <StyledWrapper data-testid="response-pane-shortcut-placeholder">
+      <div className="send-icon flex justify-center" style={{ fontSize: 200 }}>
+        <IconSend size={150} strokeWidth={1} />
       </div>
-      <div className={`flex ${isVerticalLayout ? 'mt-2' : 'mt-4'}`}>
+      <div className="flex mt-4">
         <div className="flex flex-1 flex-col items-end px-1">
           {keyBindingActions.map(({ label, action }) => (
             <div key={label} className="px-1 py-2" data-testid={`response-placeholder-shortcut-label-${action}`}>
