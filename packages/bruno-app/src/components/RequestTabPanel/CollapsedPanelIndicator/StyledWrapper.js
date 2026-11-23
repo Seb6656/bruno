@@ -1,7 +1,16 @@
 import styled from 'styled-components';
 
+// Visual knobs for the bar; colours come from the theme in the rules below.
+const BAR_HEIGHT = '28px';
+// The label matches the status bar's text (Search, Cookies, Dev Tools).
+const LABEL_FONT_SIZE = (props) => props.theme.font.size.sm;
+const LABEL_FONT_WEIGHT = 'normal';
+const BAR_PADDING = '0';
+const CONTENT_GAP = '6px';
+
 const StyledWrapper = styled.div`
   display: flex;
+  padding: ${BAR_PADDING};
   align-items: center;
   justify-content: center;
   background: ${(props) => props.theme.bg};
@@ -18,11 +27,9 @@ const StyledWrapper = styled.div`
   }
 
   .panel-label {
-    font-size: 10px;
-    font-weight: 500;
+    font-size: ${LABEL_FONT_SIZE};
+    font-weight: ${LABEL_FONT_WEIGHT};
     color: ${(props) => props.theme.colors.text.muted};
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
   }
 
   .expand-icon {
@@ -69,7 +76,7 @@ const StyledWrapper = styled.div`
       flex-direction: row;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: ${CONTENT_GAP};
       white-space: nowrap;
     }
 
@@ -87,8 +94,9 @@ const StyledWrapper = styled.div`
   /* Vertical layout - panels stacked on top or bottom */
   &.vertical {
     width: 100%;
-    height: 28px;
-    min-height: 28px;
+    height: ${BAR_HEIGHT};
+    min-height: ${BAR_HEIGHT};
+    flex-shrink: 0;
     flex-direction: row;
     cursor: pointer;
     border-top: 1px solid ${(props) => props.theme.requestTabPanel.dragbar.border};
@@ -109,7 +117,12 @@ const StyledWrapper = styled.div`
       display: flex;
       flex-direction: row;
       align-items: center;
-      gap: 6px;
+      gap: ${CONTENT_GAP};
+    }
+
+    /* The bar is itself the drag handle, so the extra hit strip is only needed when it sits against a pane edge. */
+    &.expanded::before {
+      display: none;
     }
 
     &.request {

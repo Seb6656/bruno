@@ -60,6 +60,9 @@ const COLLAPSE_EDGE_THRESHOLD = 80;
 const EXPAND_EDGE_THRESHOLD = 100;
 // Minimum response pane height to show placeholder content on click-expand
 const RESPONSE_EXPAND_MIN_HEIGHT = 300;
+// The Stacked response bar is always visible, so a drag must start after a few pixels, unlike the
+// edge-collapsed indicators that guard against accidental drags with a large threshold.
+const RESPONSE_BAR_DRAG_THRESHOLD = 4;
 
 // Tabs whose response pane we auto-collapsed when the AI sidebar docked.
 // Module-level because the panel remounts per tab (key={activeTabUid}) — a
@@ -713,7 +716,7 @@ const RequestTabPanel = () => {
             <CollapsedPanelIndicator
               panelType="request"
               isVertical={isVerticalLayout}
-              onExpand={expandRequest}
+              onActivate={expandRequest}
               onDragStart={handleRequestIndicatorDragStart}
               dragThresholdPx={isVerticalLayout ? MIN_TOP_PANE_HEIGHT / 2 : MIN_LEFT_PANE_WIDTH / 2}
             />
@@ -725,7 +728,18 @@ const RequestTabPanel = () => {
             </section>
           )}
 
-          {!requestPaneCollapsed && !responsePaneCollapsed && (
+          {isVerticalLayout && !requestPaneCollapsed && !responsePaneCollapsed && (
+            <CollapsedPanelIndicator
+              panelType="response"
+              isVertical
+              isCollapsed={false}
+              onActivate={collapseResponse}
+              onDragStart={handleResponseIndicatorDragStart}
+              dragThresholdPx={RESPONSE_BAR_DRAG_THRESHOLD}
+            />
+          )}
+
+          {!isVerticalLayout && !requestPaneCollapsed && !responsePaneCollapsed && (
             <div
               className="dragbar-wrapper"
               data-testid="request-response-dragbar"
@@ -739,9 +753,9 @@ const RequestTabPanel = () => {
             <CollapsedPanelIndicator
               panelType="response"
               isVertical={isVerticalLayout}
-              onExpand={handleResponseIndicatorClickExpand}
+              onActivate={handleResponseIndicatorClickExpand}
               onDragStart={handleResponseIndicatorDragStart}
-              dragThresholdPx={isVerticalLayout ? MIN_BOTTOM_PANE_HEIGHT / 2 : MIN_RIGHT_PANE_WIDTH / 2}
+              dragThresholdPx={isVerticalLayout ? RESPONSE_BAR_DRAG_THRESHOLD : MIN_RIGHT_PANE_WIDTH / 2}
             />
           ) : (
             <section className="response-pane flex-grow overflow-x-auto" data-testid="response-pane" style={requestPaneCollapsed ? { flex: 1 } : undefined}>
