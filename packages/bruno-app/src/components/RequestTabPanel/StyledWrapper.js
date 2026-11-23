@@ -77,28 +77,6 @@ const StyledWrapper = styled.div`
     &.response-collapsed .request-pane {
       padding-bottom: 0;
     }
-
-    div.dragbar-wrapper {
-      width: 100%;
-      height: 12px;
-      cursor: row-resize;
-      padding: 0 1rem;
-      position: relative;
-
-      div.dragbar-handle {
-        width: 100%;
-        height: 1px;
-        border-left: none;
-        border-top: solid 1px ${(props) => props.theme.requestTabPanel.dragbar.border};
-        pointer-events: none;
-      }
-
-      &:hover div.dragbar-handle {
-        border-left: none;
-        border-top: solid 1px ${(props) => props.theme.requestTabPanel.dragbar.activeBorder};
-      }
-
-    }
   }
 
   div.graphql-docs-explorer-container {

@@ -5,14 +5,18 @@ import StyledWrapper from './StyledWrapper';
 const CollapsedPanelIndicator = ({
   panelType, // 'request' or 'response'
   isVertical,
-  onExpand,
+  isCollapsed = true,
+  onActivate, // click without drag: collapses the pane when expanded, expands it when collapsed
   onDragStart,
   dragThresholdPx
 }) => {
   const dragThresholdSq = dragThresholdPx * dragThresholdPx; // to use in distance check
   const label = panelType === 'request' ? 'Request' : 'Response';
 
-  const ChevronIcon = panelType === 'request' ? IconChevronDown : IconChevronUp;
+  const action = isCollapsed ? 'expand' : 'collapse';
+  // The chevron points toward the edge the pane sits against when collapsed, and away from it when expanded.
+  const pointsDown = (panelType === 'request') === isCollapsed;
+  const ChevronIcon = pointsDown ? IconChevronDown : IconChevronUp;
 
   const pointerDownRef = useRef(null);
 
@@ -39,8 +43,8 @@ const CollapsedPanelIndicator = ({
     pointerDownRef.current = null;
     e.currentTarget.style.cursor = '';
     e.currentTarget.releasePointerCapture(e.pointerId);
-    onExpand();
-  }, [onExpand]);
+    onActivate();
+  }, [onActivate]);
 
   const handlePointerCancel = useCallback((e) => {
     if (!pointerDownRef.current) return;
@@ -52,13 +56,14 @@ const CollapsedPanelIndicator = ({
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onExpand();
+      onActivate();
     }
-  }, [onExpand]);
+  }, [onActivate]);
 
   return (
     <StyledWrapper
-      className={`collapsed-panel-indicator ${isVertical ? 'vertical' : 'horizontal'} ${panelType}`}
+      className={`collapsed-panel-indicator ${isVertical ? 'vertical' : 'horizontal'} ${panelType} ${isCollapsed ? '' : 'expanded'}`}
+      data-testid={`${panelType}-panel-indicator`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -66,8 +71,9 @@ const CollapsedPanelIndicator = ({
       role="button"
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      aria-label={`Expand ${label} pane`}
-      title={`Click to expand ${label} pane, or drag to resize`}
+      aria-expanded={!isCollapsed}
+      aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${label} pane`}
+      title={`Click to ${action} ${label} pane, or drag to resize`}
     >
       <div className="indicator-content">
         <ChevronIcon size={14} strokeWidth={2} className="expand-icon" />

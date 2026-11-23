@@ -11,7 +11,7 @@ const hint = (page: Page, part: 'label' | 'value', action: string) =>
 
 // Drag the divider down until the response pane sits at its minimum height.
 const dragResponsePaneToMinimum = async (page: Page) => {
-  const bar = await page.getByTestId('request-response-dragbar').boundingBox();
+  const bar = await page.getByTestId('response-panel-indicator').boundingBox();
   const request = await page.getByTestId('request-pane').boundingBox();
   const response = await page.getByTestId('response-pane').boundingBox();
   if (!bar || !request || !response) throw new Error('Panes or divider are not rendered');

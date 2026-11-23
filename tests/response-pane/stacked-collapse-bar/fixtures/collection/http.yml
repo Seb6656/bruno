@@ -1,0 +1,12 @@
+info:
+  name: http
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: https://echo.usebruno.com
+  body:
+    type: json
+    data: |-
+      {}

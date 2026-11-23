@@ -11,7 +11,7 @@ const requestPane = (page: Page) => page.getByTestId('request-pane');
 // Re-run after every openRequest: the pane height is component state and resets on remount.
 const dragRequestPaneToMinimum = async (page: Page) => {
   const pane = await requestPane(page).boundingBox();
-  const bar = await page.getByTestId('request-response-dragbar').boundingBox();
+  const bar = await page.getByTestId('response-panel-indicator').boundingBox();
   if (!pane || !bar) throw new Error('Request pane or divider is not rendered');
   const x = bar.x + bar.width / 2;
   await page.mouse.move(x, bar.y + bar.height / 2);
