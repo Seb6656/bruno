@@ -11,8 +11,9 @@ const StyledWrapper = styled.div`
   }
 
   &.vertical-layout {
-    padding: 1rem;
+    padding: 0.75rem 1rem;
     justify-content: center;
+    align-items: center;
   }
 `;
 
