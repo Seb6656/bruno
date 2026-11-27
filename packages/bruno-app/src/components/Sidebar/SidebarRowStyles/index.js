@@ -1,8 +1,10 @@
 import { css } from 'styled-components';
 
-// TUNING KNOB: font size of the collection name when "Large collection rows" is on.
-// Change this one value to try 14px / 15px / 16px; both the collection row and the git-remote ghost row follow it.
+// TUNING KNOBS: font size and weight of the collection name when "Large collection rows" is on.
+// Change these values to try other sizes (14px / 15px / 16px) or weights (400 regular, 500 medium,
+// 600 semibold); both the collection row and the git-remote ghost row follow them.
 export const LARGE_COLLECTION_NAME_FONT_SIZE = '15px';
+export const LARGE_COLLECTION_NAME_FONT_WEIGHT = 500;
 export const LARGE_COLLECTION_SUBTITLE_FONT_SIZE = '11px';
 // Vertical padding of a large row; the height follows from the two text lines.
 export const LARGE_COLLECTION_ROW_PADDING_Y = '0.375rem';
@@ -16,7 +18,7 @@ export const largeCollectionRowStyles = ({ nameClass, subtitleClass }) => css`
 
   ${nameClass} {
     font-size: ${LARGE_COLLECTION_NAME_FONT_SIZE};
-    font-weight: 600;
+    font-weight: ${LARGE_COLLECTION_NAME_FONT_WEIGHT};
     line-height: 1.25;
   }
 
