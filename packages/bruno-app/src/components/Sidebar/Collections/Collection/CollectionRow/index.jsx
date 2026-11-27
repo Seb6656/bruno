@@ -1,5 +1,6 @@
 import React, { useState, useRef, useMemo } from 'react';
 import classnames from 'classnames';
+import get from 'lodash/get';
 import { uuid } from 'utils/common';
 import { useDrop, useDrag } from 'react-dnd';
 import { getEmptyImage } from 'react-dnd-html5-backend';
@@ -37,7 +38,8 @@ import NewApp from 'components/Sidebar/NewApp';
 import RemoveCollections from '../RemoveCollections';
 import MoveToWorkspace from '../MoveToWorkspace';
 import { isPathExternalToBasePath } from 'utils/common/path';
-import { getSortedDraggedItems, countInvalidItems } from 'utils/collections';
+import { getSortedDraggedItems, countInvalidItems, getTotalRequestCountInCollection } from 'utils/collections';
+import getCollectionRowSubtitle from './getCollectionRowSubtitle';
 import { isTabForItemActive } from 'src/selectors/tab';
 
 import RenameCollection from '../RenameCollection';
@@ -59,7 +61,7 @@ import CreateMockServerModal from 'components/MockServer/CreateMockServerModal';
 import useSidebarSelectionClick from 'hooks/useSidebarSelectionClick';
 import { startBlockedDragTracking } from 'utils/dragBlockedCursor';
 
-const CollectionRow = ({ collection, searchText, openBulkMenu, children, isCollectionMultiDragDisabled, multiDragCollections }) => {
+const CollectionRow = ({ collection, searchText, openBulkMenu, children, isCollectionMultiDragDisabled, multiDragCollections, isFirst = false }) => {
   const isMockServerEnabled = useBetaFeature(BETA_FEATURES.MOCK_SERVER);
   const { dropdownContainerRef } = useSidebarAccordion();
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
@@ -77,6 +79,12 @@ const CollectionRow = ({ collection, searchText, openBulkMenu, children, isColle
   const dispatch = useDispatch();
   const isLoading = collection.isLoading;
   const invalidItemCount = useMemo(() => countInvalidItems(collection.items), [collection.items]);
+  const isLargeRow = useSelector((state) => get(state.app.preferences, 'display.largeCollectionRows', false));
+  const isFullyLoaded = collection.mountStatus === 'mounted' && !collection.isLoading;
+  const requestCount = useMemo(
+    () => (isLargeRow && isFullyLoaded ? getTotalRequestCountInCollection({ items: collection.items }) : 0),
+    [isLargeRow, isFullyLoaded, collection.items]
+  );
   const collectionRef = useRef(null);
 
   const selectIsCollectionFocused = useMemo(() => isTabForItemActive({ itemUid: collection.uid }), [collection.uid]);
@@ -378,7 +386,8 @@ const CollectionRow = ({ collection, searchText, openBulkMenu, children, isColle
       'collection-focused-in-tab': isCollectionFocused && !isKeyboardFocused,
       'collection-keyboard-focused': isKeyboardFocused,
       'collection-selected': isSelected,
-      'drag-disabled': isDragDisabled
+      'drag-disabled': isDragDisabled,
+      'large': isLargeRow
     }
   );
 
@@ -537,7 +546,7 @@ const CollectionRow = ({ collection, searchText, openBulkMenu, children, isColle
   ];
 
   return (
-    <StyledWrapper className="flex flex-col">
+    <StyledWrapper className={classnames('flex flex-col', { 'large-collection-divider': isLargeRow && !isFirst })}>
       {showNewRequestModal && <NewRequest collectionUid={collection.uid} onClose={() => setShowNewRequestModal(false)} />}
       {showNewFolderModal && <NewFolder collectionUid={collection.uid} onClose={() => setShowNewFolderModal(false)} />}
       {showNewAppModal && <NewApp collectionUid={collection.uid} onClose={() => setShowNewAppModal(false)} />}
@@ -592,9 +601,20 @@ const CollectionRow = ({ collection, searchText, openBulkMenu, children, isColle
               onDoubleClick={handleCollectionDoubleClick}
             />
           </ActionIcon>
-          <div className="ml-1 min-w-0" id="sidebar-collection-name" title={collection.name}>
-            {collection.name}
-          </div>
+          {isLargeRow ? (
+            <div className="ml-1 min-w-0 flex flex-col">
+              <div id="sidebar-collection-name" title={collection.name}>
+                {collection.name}
+              </div>
+              <div className="collection-subtitle" data-testid="sidebar-collection-row-subtitle">
+                {getCollectionRowSubtitle(collection, requestCount)}
+              </div>
+            </div>
+          ) : (
+            <div className="ml-1 min-w-0" id="sidebar-collection-name" title={collection.name}>
+              {collection.name}
+            </div>
+          )}
           <InvalidFilesBadge count={invalidItemCount} collectionUid={collection.uid} rowUid={collection.uid} />
           {isLoading ? <IconLoader2 className="animate-spin flex-shrink-0 mx-1 ml-auto" size={18} strokeWidth={1.5} /> : null}
         </div>

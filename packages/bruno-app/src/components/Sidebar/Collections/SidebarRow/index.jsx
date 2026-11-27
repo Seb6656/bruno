@@ -25,7 +25,7 @@ const resolveRowObject = ({ row, itemsByUid, collectionsByUid, ghostsByPath }) =
 };
 
 const renderRow = (props) => {
-  const { row, searchText, openBulkMenu, collectionsByUid, isCollectionMultiDragDisabled, isItemMultiDragDisabled, multiDragCollections, multiDragItems } = props;
+  const { row, isFirst, searchText, openBulkMenu, collectionsByUid, isCollectionMultiDragDisabled, isItemMultiDragDisabled, multiDragCollections, multiDragItems } = props;
   const resolved = resolveRowObject(props);
 
   switch (row.kind) {
@@ -38,6 +38,7 @@ const renderRow = (props) => {
           openBulkMenu={openBulkMenu}
           isCollectionMultiDragDisabled={isCollectionMultiDragDisabled}
           multiDragCollections={multiDragCollections}
+          isFirst={isFirst}
         />
       );
     }
@@ -65,7 +66,7 @@ const renderRow = (props) => {
     }
     case 'ghost': {
       if (!resolved) return null;
-      return <GitRemoteCollectionRow entry={resolved} />;
+      return <GitRemoteCollectionRow entry={resolved} isFirst={isFirst} />;
     }
     case 'example': {
       const item = resolved;
@@ -123,6 +124,7 @@ const areEqual = (prev, next) => {
     && a.parentName === b.parentName
     && a.collectionPathname === b.collectionPathname
     && a.exampleIndex === b.exampleIndex
+    && prev.isFirst === next.isFirst
     && prev.searchText === next.searchText
     && prev.isCollectionMultiDragDisabled === next.isCollectionMultiDragDisabled
     && prev.isItemMultiDragDisabled === next.isItemMultiDragDisabled

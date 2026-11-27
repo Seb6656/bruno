@@ -1,6 +1,19 @@
 import styled from 'styled-components';
+import { largeCollectionRowStyles, largeCollectionDividerStyles } from 'components/Sidebar/SidebarRowStyles';
 
 const Wrapper = styled.div`
+  &.large-collection-divider {
+    ${largeCollectionDividerStyles}
+  }
+
+  .git-collection-row.large {
+    ${largeCollectionRowStyles({ nameClass: '.git-collection-name', subtitleClass: '.git-collection-subtitle' })}
+
+    .git-collection-subtitle {
+      padding-left: 6px;
+    }
+  }
+
   .git-collection-row {
     display: flex;
     align-items: center;

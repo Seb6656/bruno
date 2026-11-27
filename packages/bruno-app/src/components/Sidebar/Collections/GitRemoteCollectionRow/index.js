@@ -6,9 +6,13 @@ import MenuDropdown from 'ui/MenuDropdown';
 import { useSidebarAccordion } from 'components/Sidebar/SidebarAccordionContext';
 import CloneGitRepository from 'components/Sidebar/CloneGitRespository';
 import RemoveGitRemote from 'components/WorkspaceHome/WorkspaceOverview/CollectionsList/RemoveGitRemote';
+import get from 'lodash/get';
+import { useSelector } from 'react-redux';
+import classnames from 'classnames';
 import StyledWrapper from './StyledWrapper';
 
-const GitRemoteCollectionRow = ({ entry }) => {
+const GitRemoteCollectionRow = ({ entry, isFirst = false }) => {
+  const isLargeRow = useSelector((state) => get(state.app.preferences, 'display.largeCollectionRows', false));
   const { dropdownContainerRef } = useSidebarAccordion();
   const menuDropdownRef = useRef(null);
   const [showCloneModal, setShowCloneModal] = useState(false);
@@ -53,7 +57,7 @@ const GitRemoteCollectionRow = ({ entry }) => {
   ];
 
   return (
-    <StyledWrapper>
+    <StyledWrapper className={classnames({ 'large-collection-divider': isLargeRow && !isFirst })}>
       {showCloneModal && (
         <CloneGitRepository
           onClose={closeCloneModal}
@@ -70,7 +74,7 @@ const GitRemoteCollectionRow = ({ entry }) => {
         />
       )}
       <div
-        className="git-collection-row"
+        className={classnames('git-collection-row', { large: isLargeRow })}
         onClick={openCloneModal}
         onContextMenu={handleRightClick}
         title={`${entry.name} — click to clone from ${entry.remote}`}
@@ -80,7 +84,14 @@ const GitRemoteCollectionRow = ({ entry }) => {
           <span className="git-badge ml-1" aria-hidden="true">
             <IconBrandGit size={14} strokeWidth={2} />
           </span>
-          <div className="git-collection-name w-full">{entry.name}</div>
+          {isLargeRow ? (
+            <div className="git-collection-name-column w-full min-w-0">
+              <div className="git-collection-name">{entry.name}</div>
+              <div className="git-collection-subtitle" data-testid="sidebar-git-collection-row-subtitle">Not cloned</div>
+            </div>
+          ) : (
+            <div className="git-collection-name w-full">{entry.name}</div>
+          )}
         </div>
         <div>
           <div className="pr-2" onClick={(e) => e.stopPropagation()}>

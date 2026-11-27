@@ -36,7 +36,9 @@ export const buildPreferencesLocators = (page: Page) => ({
     /** The "Request / response layout" segmented control */
     layoutOrientation: () => page.getByTestId('preferences-layout-orientation'),
     /** A layout option's radio input, by stored value */
-    layoutOption: (orientation: 'horizontal' | 'vertical') => page.getByTestId(`layout-orientation-${orientation}`)
+    layoutOption: (orientation: 'horizontal' | 'vertical') => page.getByTestId(`layout-orientation-${orientation}`),
+    /** The "Large collection rows" checkbox in the Sidebar section */
+    largeCollectionRows: () => page.getByTestId('preferences-large-collection-rows')
   },
   /** The open Preferences tab in the tab bar */
   openTab: () => page.locator('.request-tab').filter({ hasText: 'Preferences' }),

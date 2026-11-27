@@ -25,6 +25,9 @@ const defaultPreferences = {
     },
     ai: {
       enabled: false
+    },
+    display: {
+      largeCollectionRows: false
     }
   }
 };

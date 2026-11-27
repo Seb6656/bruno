@@ -40,6 +40,10 @@ export const buildSidebarLocators = (page: Page) => {
     },
     closeAllCollectionsButton: () => page.getByTestId('collections-header-actions-menu-close-all'),
     collectionRow,
+    /** Second line under a collection name ("Not loaded", "3 requests"); only rendered with "Large collection rows" on */
+    collectionSubtitle: (name: string) => collectionRow(name).getByTestId('sidebar-collection-row-subtitle'),
+    /** The wrapper around a collection row (and its divider, when "Large collection rows" is on) */
+    collectionRowWrapper: (name: string) => collectionRow(name).locator('xpath=..'),
     collectionRows: () => page.getByTestId('sidebar-collection-row'),
     invalidFilesBadge: (name: string) => collectionRow(name).getByTestId('invalid-files-badge'),
     invalidFilesTooltip: () => page.getByTestId('invalid-files-tooltip'),

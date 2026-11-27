@@ -1,7 +1,11 @@
 import styled from 'styled-components';
-import sidebarRowStyles from 'components/Sidebar/SidebarRowStyles';
+import sidebarRowStyles, { largeCollectionRowStyles, largeCollectionDividerStyles } from 'components/Sidebar/SidebarRowStyles';
 
 const Wrapper = styled.div`
+  &.large-collection-divider {
+    ${largeCollectionDividerStyles}
+  }
+
   .collection-name {
     padding-left: 4px;
     ${sidebarRowStyles({ selectedClass: 'collection-focused-in-tab', keyboardFocusedClass: 'collection-keyboard-focused', actionsClass: 'collection-actions' })}
@@ -46,6 +50,10 @@ const Wrapper = styled.div`
       transition: ${(props) => props.theme.dragAndDrop.transition};
     }
 
+  }
+
+  .collection-name.large {
+    ${largeCollectionRowStyles({ nameClass: '#sidebar-collection-name', subtitleClass: '.collection-subtitle' })}
   }
 
   #sidebar-collection-name {
