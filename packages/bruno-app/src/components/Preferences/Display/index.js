@@ -2,6 +2,7 @@ import React from 'react';
 import Font from './Font/index';
 import Zoom from './Zoom/index';
 import Layout from './Layout/index';
+import LargeCollectionRows from './LargeCollectionRows/index';
 
 const Display = ({ close }) => {
   return (
@@ -16,6 +17,9 @@ const Display = ({ close }) => {
         </div>
         <div className="w-full flex flex-col gap-2">
           <Layout />
+        </div>
+        <div className="w-full flex flex-col gap-2">
+          <LargeCollectionRows />
         </div>
       </div>
     </div>

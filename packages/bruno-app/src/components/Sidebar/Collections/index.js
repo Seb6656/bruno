@@ -140,9 +140,10 @@ const Collections = ({ showSearch, isCreatingCollection, onCreateClick, onDismis
           computeItemKey={(_, row) => row.id}
           defaultItemHeight={26}
           increaseViewportBy={{ top: 400, bottom: 600 }}
-          itemContent={(_, row) => (
+          itemContent={(index, row) => (
             <SidebarRow
               row={row}
+              isFirst={index === 0}
               searchText={debouncedSearchText}
               openBulkMenu={openBulkMenu}
               itemsByUid={itemsByUid}
