@@ -261,6 +261,26 @@ test.describe('Sidebar search by folder and collection name', () => {
         await expect(row('stock-list')).toHaveCount(0);
       });
 
+      await test.step('Bolds only the matched part of names the search matches on', async () => {
+        const match = (name: string) => locators.sidebar.itemRow(name).getByTestId('sidebar-search-match');
+        const bold = page.getByTestId('sidebar-search-match');
+
+        await searchInput.fill('refund');
+        await expect(match('Refunds')).toHaveText('Refund');
+        // Shown only because the folder matched, or an app: no bold.
+        await expect(match('create-charge')).toHaveCount(0);
+        await expect(match('issue-credit')).toHaveCount(0);
+        await expect(match('tally')).toHaveCount(0);
+        await expect(bold).toHaveCount(1);
+
+        await searchInput.fill('ledger');
+        await expect(locators.sidebar.collection(LEDGER).getByTestId('sidebar-search-match')).toHaveText('Ledger');
+        await expect(bold).toHaveCount(1);
+
+        await searchInput.fill('');
+        await expect(bold).toHaveCount(0);
+      });
+
       await test.step('A phrase spanning several names matches nothing', async () => {
         await searchInput.fill('ledger refunds');
         await expect(locators.sidebar.collection(LEDGER)).toHaveCount(0);
