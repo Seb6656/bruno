@@ -11,6 +11,38 @@ export const doesNameMatchSearchText = (name, searchText = '') => {
   return !query || Boolean(name?.toLowerCase().includes(query));
 };
 
+/**
+ * Splits `name` into segments for bolding the parts that `doesNameMatchSearchText` matched on.
+ * Same normalisation (trim + lowercase); every non-overlapping occurrence is a match segment and
+ * the original casing of `name` is kept. No match or an empty query yields one plain segment.
+ *
+ * @returns {{ text: string, isMatch: boolean }[]}
+ */
+export const getSearchMatchSegments = (name, searchText = '') => {
+  const text = name == null ? '' : String(name);
+  const query = normalizeSearchText(searchText);
+  if (!query) return [{ text, isMatch: false }];
+
+  const lowerText = text.toLowerCase();
+  // toLowerCase can change length for some characters, so indices would not map onto `text`.
+  // Show the name plain rather than bold the wrong part.
+  if (lowerText.length !== text.length) {
+    return [{ text, isMatch: false }];
+  }
+
+  const segments = [];
+  let cursor = 0;
+  let index = lowerText.indexOf(query, cursor);
+  while (index !== -1) {
+    if (index > cursor) segments.push({ text: text.slice(cursor, index), isMatch: false });
+    segments.push({ text: text.slice(index, index + query.length), isMatch: true });
+    cursor = index + query.length;
+    index = lowerText.indexOf(query, cursor);
+  }
+  if (cursor < text.length) segments.push({ text: text.slice(cursor), isMatch: false });
+  return segments.length ? segments : [{ text, isMatch: false }];
+};
+
 // True when any non-transient request or folder below `items` has a matching name.
 const hasMatchingDescendant = (items = [], query) => {
   return items.some((child) => {

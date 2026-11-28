@@ -1,4 +1,4 @@
-import { doesNameMatchSearchText, getSidebarSearchMatch } from './search';
+import { doesNameMatchSearchText, getSearchMatchSegments, getSidebarSearchMatch } from './search';
 
 const createRequest = (name, props = {}) => ({
   uid: name,
@@ -68,5 +68,97 @@ describe('getSidebarSearchMatch', () => {
   it('short-circuits to show everything when an ancestor matched', () => {
     expect(getSidebarSearchMatch(createRequest('anything'), 'zzz', true)).toEqual({ isVisible: true, showAll: true });
     expect(getSidebarSearchMatch(createFolder('empty'), 'zzz', true)).toEqual({ isVisible: true, showAll: true });
+  });
+});
+
+describe('getSearchMatchSegments', () => {
+  const plain = (text) => [{ text, isMatch: false }];
+
+  it('returns one plain segment for no or whitespace-only query', () => {
+    expect(getSearchMatchSegments('Refunds')).toEqual(plain('Refunds'));
+    expect(getSearchMatchSegments('Refunds', '')).toEqual(plain('Refunds'));
+    expect(getSearchMatchSegments('Refunds', '   ')).toEqual(plain('Refunds'));
+  });
+
+  it('returns one plain segment when nothing matches', () => {
+    expect(getSearchMatchSegments('Refunds', 'xyz')).toEqual(plain('Refunds'));
+  });
+
+  it('handles null and undefined names', () => {
+    expect(getSearchMatchSegments(null, 'a')).toEqual(plain(''));
+    expect(getSearchMatchSegments(undefined, 'a')).toEqual(plain(''));
+  });
+
+  it('splits around a single match', () => {
+    expect(getSearchMatchSegments('Create refund now', 'refund')).toEqual([
+      { text: 'Create ', isMatch: false },
+      { text: 'refund', isMatch: true },
+      { text: ' now', isMatch: false }
+    ]);
+  });
+
+  it('marks every occurrence, non-overlapping', () => {
+    expect(getSearchMatchSegments('ab ab ab', 'ab')).toEqual([
+      { text: 'ab', isMatch: true },
+      { text: ' ', isMatch: false },
+      { text: 'ab', isMatch: true },
+      { text: ' ', isMatch: false },
+      { text: 'ab', isMatch: true }
+    ]);
+    expect(getSearchMatchSegments('aaaa', 'aa')).toEqual([
+      { text: 'aa', isMatch: true },
+      { text: 'aa', isMatch: true }
+    ]);
+  });
+
+  it('handles a match at the start and at the end', () => {
+    expect(getSearchMatchSegments('Refunds', 'refund')).toEqual([
+      { text: 'Refund', isMatch: true },
+      { text: 's', isMatch: false }
+    ]);
+    expect(getSearchMatchSegments('Make refund', 'refund')).toEqual([
+      { text: 'Make ', isMatch: false },
+      { text: 'refund', isMatch: true }
+    ]);
+  });
+
+  it('matches case-insensitively and keeps the original casing', () => {
+    expect(getSearchMatchSegments('LeDgEr API', 'LEDGER')).toEqual([
+      { text: 'LeDgEr', isMatch: true },
+      { text: ' API', isMatch: false }
+    ]);
+  });
+
+  it('treats regex characters literally', () => {
+    expect(getSearchMatchSegments('Orders (v1)', '(v1)')).toEqual([
+      { text: 'Orders ', isMatch: false },
+      { text: '(v1)', isMatch: true }
+    ]);
+    expect(getSearchMatchSegments('axb', 'a.b')).toEqual(plain('axb'));
+    expect(getSearchMatchSegments('a.b', 'a.b')).toEqual([{ text: 'a.b', isMatch: true }]);
+  });
+
+  it('returns a plain segment when the query is longer than the name', () => {
+    expect(getSearchMatchSegments('abc', 'abcdef')).toEqual(plain('abc'));
+  });
+
+  it('trims surrounding whitespace in the query', () => {
+    expect(getSearchMatchSegments('Create refund', '  refund  ')).toEqual([
+      { text: 'Create ', isMatch: false },
+      { text: 'refund', isMatch: true }
+    ]);
+  });
+
+  it('returns a plain segment when lowercasing changes the name length', () => {
+    expect(getSearchMatchSegments('İstanbul', 'stan')).toEqual(plain('İstanbul'));
+  });
+
+  it('agrees with doesNameMatchSearchText', () => {
+    ['refund', ' REFUND ', 'x', '(v1)'].forEach((q) => {
+      ['Refunds', 'Orders (v1)', 'abc'].forEach((n) => {
+        const hasMatch = getSearchMatchSegments(n, q).some((seg) => seg.isMatch);
+        expect(hasMatch).toBe(doesNameMatchSearchText(n, q));
+      });
+    });
   });
 });

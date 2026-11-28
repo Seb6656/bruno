@@ -161,6 +161,14 @@ test.describe('Large collection rows', () => {
         await expect(row('health')).toBeVisible();
       });
 
+      await test.step('A collection-name match is bold and the subtitle still shows', async () => {
+        await page.getByTestId('sidebar-search-input').fill('orde');
+        await expect(locators.sidebar.collection(ORDERS).getByTestId('sidebar-search-match')).toHaveText('Orde');
+        await expect(locators.sidebar.collectionSubtitle(ORDERS)).toHaveText('3 requests');
+        await page.getByTestId('sidebar-search-input').fill('');
+        await expect(page.getByTestId('sidebar-search-match')).toHaveCount(0);
+      });
+
       await test.step('Shift-click selects the range from a folder through its requests to the next request', async () => {
         await expandFolder(page, 'billing');
         await expect(row('invoice-list')).toBeVisible();

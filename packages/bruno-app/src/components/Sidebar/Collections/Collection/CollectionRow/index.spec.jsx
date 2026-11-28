@@ -37,7 +37,7 @@ const makeCollection = (overrides = {}) => ({
   ...overrides
 });
 
-const renderRow = ({ preferences = {}, collection = makeCollection(), isFirst = false } = {}) => {
+const renderRow = ({ preferences = {}, collection = makeCollection(), isFirst = false, searchText = '' } = {}) => {
   const store = configureStore({
     reducer: {
       app: (state = { preferences, clipboard: { hasCopiedItems: false } }) => state,
@@ -50,7 +50,7 @@ const renderRow = ({ preferences = {}, collection = makeCollection(), isFirst = 
   return render(
     <Provider store={store}>
       <ThemeProvider theme={themes.light}>
-        <CollectionRow collection={collection} searchText="" isFirst={isFirst} />
+        <CollectionRow collection={collection} searchText={searchText} isFirst={isFirst} />
       </ThemeProvider>
     </Provider>
   );
@@ -93,5 +93,19 @@ describe('CollectionRow large rows', () => {
     first.unmount();
     const second = renderRow({ preferences: prefs, isFirst: false });
     expect(second.container.querySelector('.large-collection-divider')).not.toBeNull();
+  });
+});
+
+describe('CollectionRow search highlight', () => {
+  it.each([false, true])('bolds the matched part of the name (large rows: %s)', (largeCollectionRows) => {
+    renderRow({ preferences: { display: { largeCollectionRows } }, searchText: 'api' });
+    const match = screen.getByTestId('sidebar-search-match');
+    expect(match).toHaveTextContent('API');
+    expect(match.closest('#sidebar-collection-name')).toHaveAttribute('title', 'My API');
+  });
+
+  it('renders no bold without a match', () => {
+    renderRow({ searchText: 'zzz' });
+    expect(screen.queryByTestId('sidebar-search-match')).not.toBeInTheDocument();
   });
 });

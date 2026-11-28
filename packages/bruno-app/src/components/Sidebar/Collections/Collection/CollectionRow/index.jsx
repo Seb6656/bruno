@@ -58,6 +58,7 @@ import useKeybindingDisplayText from 'hooks/useKeybindingDisplayText';
 import { useBetaFeature, BETA_FEATURES } from 'utils/beta-features';
 import StatusBadge from 'ui/StatusBadge';
 import CreateMockServerModal from 'components/MockServer/CreateMockServerModal';
+import SearchHighlightedName from 'components/Sidebar/SearchHighlightedName';
 import useSidebarSelectionClick from 'hooks/useSidebarSelectionClick';
 import { startBlockedDragTracking } from 'utils/dragBlockedCursor';
 
@@ -604,7 +605,7 @@ const CollectionRow = ({ collection, searchText, openBulkMenu, children, isColle
           {isLargeRow ? (
             <div className="ml-1 min-w-0 flex flex-col">
               <div id="sidebar-collection-name" title={collection.name}>
-                {collection.name}
+                <SearchHighlightedName name={collection.name} searchText={searchText} />
               </div>
               <div className="collection-subtitle" data-testid="sidebar-collection-row-subtitle">
                 {getCollectionRowSubtitle(collection, requestCount)}
@@ -612,7 +613,7 @@ const CollectionRow = ({ collection, searchText, openBulkMenu, children, isColle
             </div>
           ) : (
             <div className="ml-1 min-w-0" id="sidebar-collection-name" title={collection.name}>
-              {collection.name}
+              <SearchHighlightedName name={collection.name} searchText={searchText} />
             </div>
           )}
           <InvalidFilesBadge count={invalidItemCount} collectionUid={collection.uid} rowUid={collection.uid} />
